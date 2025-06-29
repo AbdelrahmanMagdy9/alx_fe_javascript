@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(quoteStorageKey, JSON.stringify(quotes));
     }
 
-    async function syncWithServer() {
+    // FIX: Renamed function to syncQuotes
+    async function syncQuotes() {
         showNotification('Syncing with server...', 'info');
         try {
             const serverQuotes = await fetchQuotesFromServer();
@@ -91,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // FIX: Modified addQuote to post data to the server
     async function addQuote() {
         const newText = newQuoteTextInput.value.trim();
         const newCategory = newQuoteCategoryInput.value.trim();
@@ -101,16 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Prepare data in the format expected by the server
         const postData = {
             title: newText,
             body: newCategory,
-            userId: 1, // A required field for JSONPlaceholder
+            userId: 1,
         };
 
         try {
             showNotification('Posting new quote to server...', 'info');
-            // Make the POST request to the server
             const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
                 method: 'POST',
                 headers: {
@@ -124,25 +122,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const serverResponse = await response.json();
-            
-            // Create a quote object for our app using the server's response
             const newQuote = {
                 id: serverResponse.id,
                 text: serverResponse.title,
                 category: serverResponse.body
             };
 
-            // Add the new quote to our local array and save
             quotes.push(newQuote);
             saveQuotes();
             populateCategories();
             
-            // Clear inputs and provide feedback
             newQuoteTextInput.value = "";
             newQuoteCategoryInput.value = "";
             showNotification('Quote successfully posted and added!', 'success');
 
-            // Update the UI to reflect the new quote
             categoryFilter.value = newQuote.category;
             filterQuotes();
 
@@ -230,7 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', importFromJsonFile);
     categoryFilter.addEventListener('change', filterQuotes);
-    syncBtn.addEventListener('click', syncWithServer);
+    // FIX: Updated event listener to call syncQuotes
+    syncBtn.addEventListener('click', syncQuotes);
 
     loadQuotes();
     populateCategories();
@@ -240,5 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     showRandomQuote();
 
-    setInterval(syncWithServer, 60000);
+    // FIX: Updated periodic call to use syncQuotes
+    setInterval(syncQuotes, 60000);
 });
