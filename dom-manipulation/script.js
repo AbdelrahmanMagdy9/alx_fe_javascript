@@ -18,22 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryFilter = document.getElementById('categoryFilter');
     const syncBtn = document.getElementById('syncBtn');
 
-    // --- MOCK SERVER ---
-    const server = {
-        quotes: [
-            { id: 1, text: "The mind is everything. What you think you become.", category: "Philosophy" },
-            { id: 2, text: "The best way to predict the future is to create it.", category: "Innovation" },
-            { id: 3, text: "Life is 10% what happens to us and 90% how we react to it.", category: "Wisdom" }
-        ],
-        fetchQuotes: function() {
-            // Simulate a network request
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(this.quotes);
-                }, 1000); // 1-second delay
-            });
-        }
-    };
+    // --- MOCK SERVER DATA ---
+    const serverQuotesData = [
+        { id: 1, text: "The mind is everything. What you think you become.", category: "Philosophy" },
+        { id: 2, text: "The best way to predict the future is to create it.", category: "Innovation" },
+        { id: 3, text: "Life is 10% what happens to us and 90% how we react to it.", category: "Wisdom" }
+    ];
+
+    // FIX: Renamed function to match the test's expectation
+    /**
+     * Simulates fetching quotes from a server.
+     * @returns {Promise<Array>} A promise that resolves with an array of quote objects.
+     */
+    async function fetchQuotesFromServer() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(serverQuotesData);
+            }, 1000); // 1-second delay to simulate network latency
+        });
+    }
 
     // --- CORE & UI FUNCTIONS ---
 
@@ -44,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             notificationArea.style.display = 'none';
-        }, 5000); // Hide after 5 seconds
+        }, 5000);
     }
     
     // --- DATA MANAGEMENT & SYNC ---
@@ -54,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storedQuotes) {
             quotes = JSON.parse(storedQuotes);
         } else {
-            // Initial default if no local data
             quotes = [ { id: Date.now(), text: "Your very first local quote!", category: "Local" } ];
             saveQuotes();
         }
@@ -67,15 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function syncWithServer() {
         showNotification('Syncing with server...', 'info');
         try {
-            const serverQuotes = await server.fetchQuotes();
+            // FIX: Call the correctly named function
+            const serverQuotes = await fetchQuotesFromServer();
             const localQuotes = quotes;
             
-            // CONFLICT RESOLUTION: Server data takes precedence for existing IDs.
-            // New local-only quotes are kept.
             const serverQuoteMap = new Map(serverQuotes.map(q => [q.id, q]));
             const localQuoteMap = new Map(localQuotes.map(q => [q.id, q]));
             
-            // Combine maps. The server map's values will overwrite local ones if IDs conflict.
             const mergedMap = new Map([...localQuoteMap, ...serverQuoteMap]);
             const mergedQuotes = Array.from(mergedMap.values());
             
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Sync complete. Your data is up to date.', 'success');
             }
             
-            filterQuotes(); // Refresh view
+            filterQuotes();
             
         } catch (error) {
             showNotification('Failed to sync with the server.', 'error');
@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Create new quote with a unique ID
         const newQuote = { id: Date.now(), text: newText, category: newCategory };
         quotes.push(newQuote);
         
@@ -135,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = category;
             categoryFilter.appendChild(option);
         });
-        // Restore selection if category still exists
         categoryFilter.value = lastSelected;
     }
 
@@ -163,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quoteDisplay.innerHTML = `<p>"${randomQuote.text}"</p><em>- ${randomQuote.category}</em>`;
     }
 
-    // --- IMPORT/EXPORT (unchanged but compatible) ---
+    // --- IMPORT/EXPORT ---
     function exportToJsonFile() {
         const jsonString = JSON.stringify(quotes, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
@@ -178,14 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function importFromJsonFile(event) {
-        // Simple import: overwrites local data. For a real app, merging would be better.
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const importedQuotes = JSON.parse(e.target.result);
-                quotes = importedQuotes; // Replace local quotes
+                quotes = importedQuotes;
                 saveQuotes();
                 populateCategories();
                 alert('Quotes imported successfully, overwriting local data.');
