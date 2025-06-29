@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Quote Generator</title>
+    <title>Dynamic Quote Generator - With Storage</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -17,19 +17,22 @@
         h1, h2 {
             color: #1a1a1a;
         }
-        #quoteDisplay {
+        #quoteDisplay, #lastViewedQuote {
             background-color: #fff;
             border-left: 5px solid #007BFF;
             padding: 1rem 1.5rem;
             margin: 1.5rem 0;
             min-height: 60px;
         }
-        #quoteDisplay p {
+        #lastViewedQuote {
+            border-left-color: #6c757d; /* A different color for session storage demo */
+        }
+        #quoteDisplay p, #lastViewedQuote p {
             font-style: italic;
             font-size: 1.2rem;
             margin: 0;
         }
-        #quoteDisplay em {
+        #quoteDisplay em, #lastViewedQuote em {
             display: block;
             text-align: right;
             color: #555;
@@ -43,9 +46,16 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
+            margin-right: 5px;
         }
         button:hover {
             background-color: #0056b3;
+        }
+        .secondary-btn {
+            background-color: #28a745;
+        }
+        .secondary-btn:hover {
+            background-color: #218838;
         }
         input[type="text"] {
             width: calc(50% - 22px);
@@ -54,7 +64,7 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .add-quote-container {
+        .controls-container {
             margin-top: 2rem;
             padding-top: 1rem;
             border-top: 1px solid #ddd;
@@ -70,12 +80,25 @@
     </div>
     <button id="newQuoteBtn">Show New Quote</button>
 
+    <!-- Session Storage Demo -->
+    <div id="lastViewedQuote">
+        <p>The last quote you viewed in this session will appear here.</p>
+    </div>
+
     <!-- Form for adding new quotes -->
-    <div class="add-quote-container">
+    <div class="controls-container">
         <h2>Add Your Own Quote</h2>
         <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
         <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
         <button id="addQuoteBtn">Add Quote</button>
+    </div>
+
+    <!-- Import/Export Controls -->
+    <div class="controls-container">
+        <h2>Manage Your Quotes</h2>
+        <button id="exportBtn" class="secondary-btn">Export to JSON</button>
+        <button id="importBtn" class="secondary-btn">Import from JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" />
     </div>
 
     <script src="script.js"></script>
