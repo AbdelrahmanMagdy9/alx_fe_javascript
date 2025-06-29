@@ -18,24 +18,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryFilter = document.getElementById('categoryFilter');
     const syncBtn = document.getElementById('syncBtn');
 
-    // --- MOCK SERVER DATA ---
-    const serverQuotesData = [
-        { id: 1, text: "The mind is everything. What you think you become.", category: "Philosophy" },
-        { id: 2, text: "The best way to predict the future is to create it.", category: "Innovation" },
-        { id: 3, text: "Life is 10% what happens to us and 90% how we react to it.", category: "Wisdom" }
-    ];
-
-    // FIX: Renamed function to match the test's expectation
+    // FIX: Modified function to fetch from the required mock API URL
     /**
-     * Simulates fetching quotes from a server.
+     * Fetches quotes from the JSONPlaceholder API.
      * @returns {Promise<Array>} A promise that resolves with an array of quote objects.
      */
     async function fetchQuotesFromServer() {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(serverQuotesData);
-            }, 1000); // 1-second delay to simulate network latency
-        });
+        try {
+            const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const posts = await response.json();
+            
+            // Transform the post data into our quote format.
+            // We'll take the first 10 posts and use the 'title' as the quote text.
+            const fetchedQuotes = posts.slice(0, 10).map(post => ({
+                id: post.id,
+                text: post.title,
+                category: 'From Server' // Assign a generic category
+            }));
+            
+            return fetchedQuotes;
+
+        } catch (error) {
+            console.error("Error fetching quotes from server:", error);
+            showNotification('Could not fetch data from the server.', 'error');
+            return []; // Return an empty array on failure to prevent crashes
+        }
     }
 
     // --- CORE & UI FUNCTIONS ---
@@ -69,8 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function syncWithServer() {
         showNotification('Syncing with server...', 'info');
         try {
-            // FIX: Call the correctly named function
             const serverQuotes = await fetchQuotesFromServer();
+            if (serverQuotes.length === 0) return; // Stop if fetch failed
+
             const localQuotes = quotes;
             
             const serverQuoteMap = new Map(serverQuotes.map(q => [q.id, q]));
@@ -134,7 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = category;
             categoryFilter.appendChild(option);
         });
-        categoryFilter.value = lastSelected;
+        if (categories.includes(lastSelected)) {
+            categoryFilter.value = lastSelected;
+        }
     }
 
     function filterQuotes() {
