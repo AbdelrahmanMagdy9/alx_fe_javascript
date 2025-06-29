@@ -18,11 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryFilter = document.getElementById('categoryFilter');
     const syncBtn = document.getElementById('syncBtn');
 
-    // FIX: Modified function to fetch from the required mock API URL
-    /**
-     * Fetches quotes from the JSONPlaceholder API.
-     * @returns {Promise<Array>} A promise that resolves with an array of quote objects.
-     */
     async function fetchQuotesFromServer() {
         try {
             const response = await fetch('https://jsonplaceholder.typicode.com/posts');
@@ -30,21 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const posts = await response.json();
-            
-            // Transform the post data into our quote format.
-            // We'll take the first 10 posts and use the 'title' as the quote text.
             const fetchedQuotes = posts.slice(0, 10).map(post => ({
                 id: post.id,
                 text: post.title,
-                category: 'From Server' // Assign a generic category
+                category: 'From Server'
             }));
-            
             return fetchedQuotes;
-
         } catch (error) {
             console.error("Error fetching quotes from server:", error);
             showNotification('Could not fetch data from the server.', 'error');
-            return []; // Return an empty array on failure to prevent crashes
+            return [];
         }
     }
 
@@ -54,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         notificationArea.textContent = message;
         notificationArea.className = `notification-${type}`;
         notificationArea.style.display = 'block';
-
         setTimeout(() => {
             notificationArea.style.display = 'none';
         }, 5000);
@@ -80,37 +69,30 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Syncing with server...', 'info');
         try {
             const serverQuotes = await fetchQuotesFromServer();
-            if (serverQuotes.length === 0) return; // Stop if fetch failed
-
+            if (serverQuotes.length === 0) return;
             const localQuotes = quotes;
-            
             const serverQuoteMap = new Map(serverQuotes.map(q => [q.id, q]));
             const localQuoteMap = new Map(localQuotes.map(q => [q.id, q]));
-            
             const mergedMap = new Map([...localQuoteMap, ...serverQuoteMap]);
             const mergedQuotes = Array.from(mergedMap.values());
-            
             const newQuotesCount = mergedQuotes.length - localQuotes.length;
-            
             quotes = mergedQuotes;
             saveQuotes();
             populateCategories();
-            
             if (newQuotesCount > 0) {
                 showNotification(`Sync complete. ${newQuotesCount} new quote(s) added.`, 'success');
             } else {
                 showNotification('Sync complete. Your data is up to date.', 'success');
             }
-            
             filterQuotes();
-            
         } catch (error) {
             showNotification('Failed to sync with the server.', 'error');
             console.error('Sync error:', error);
         }
     }
     
-    function addQuote() {
+    // FIX: Modified addQuote to post data to the server
+    async function addQuote() {
         const newText = newQuoteTextInput.value.trim();
         const newCategory = newQuoteCategoryInput.value.trim();
 
@@ -119,18 +101,55 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const newQuote = { id: Date.now(), text: newText, category: newCategory };
-        quotes.push(newQuote);
-        
-        saveQuotes();
-        populateCategories();
-        
-        newQuoteTextInput.value = "";
-        newQuoteCategoryInput.value = "";
+        // Prepare data in the format expected by the server
+        const postData = {
+            title: newText,
+            body: newCategory,
+            userId: 1, // A required field for JSONPlaceholder
+        };
 
-        showNotification('New quote added locally. Sync to save to server.', 'info');
-        categoryFilter.value = newCategory;
-        filterQuotes();
+        try {
+            showNotification('Posting new quote to server...', 'info');
+            // Make the POST request to the server
+            const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json; charset=UTF-8',
+                },
+                body: JSON.stringify(postData),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+
+            const serverResponse = await response.json();
+            
+            // Create a quote object for our app using the server's response
+            const newQuote = {
+                id: serverResponse.id,
+                text: serverResponse.title,
+                category: serverResponse.body
+            };
+
+            // Add the new quote to our local array and save
+            quotes.push(newQuote);
+            saveQuotes();
+            populateCategories();
+            
+            // Clear inputs and provide feedback
+            newQuoteTextInput.value = "";
+            newQuoteCategoryInput.value = "";
+            showNotification('Quote successfully posted and added!', 'success');
+
+            // Update the UI to reflect the new quote
+            categoryFilter.value = newQuote.category;
+            filterQuotes();
+
+        } catch (error) {
+            console.error("Failed to post quote:", error);
+            showNotification("Error posting quote to server. Please try again.", "error");
+        }
     }
     
     // --- FILTERING AND DISPLAY ---
@@ -159,16 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function showRandomQuote() {
         const selectedCategory = categoryFilter.value;
         let filteredQuotes = quotes;
-
         if (selectedCategory !== 'all') {
             filteredQuotes = quotes.filter(quote => quote.category === selectedCategory);
         }
-
         if (filteredQuotes.length === 0) {
             quoteDisplay.innerHTML = '<p>No quotes available for this category.</p>';
             return;
         }
-
         const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
         const randomQuote = filteredQuotes[randomIndex];
         quoteDisplay.innerHTML = `<p>"${randomQuote.text}"</p><em>- ${randomQuote.category}</em>`;
@@ -216,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryFilter.addEventListener('change', filterQuotes);
     syncBtn.addEventListener('click', syncWithServer);
 
-    // Initial setup
     loadQuotes();
     populateCategories();
     const lastFilter = localStorage.getItem(categoryFilterKey);
@@ -225,6 +240,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     showRandomQuote();
 
-    // Periodic sync every 60 seconds
     setInterval(syncWithServer, 60000);
 });
