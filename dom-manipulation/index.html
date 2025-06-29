@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Quote Generator - With Storage</title>
+    <title>Dynamic Quote Generator - With Filtering</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -17,38 +17,35 @@
         h1, h2 {
             color: #1a1a1a;
         }
-        #quoteDisplay, #lastViewedQuote {
+        #quoteDisplay {
             background-color: #fff;
             border-left: 5px solid #007BFF;
             padding: 1rem 1.5rem;
             margin: 1.5rem 0;
             min-height: 60px;
         }
-        #lastViewedQuote {
-            border-left-color: #6c757d; /* A different color for session storage demo */
-        }
-        #quoteDisplay p, #lastViewedQuote p {
+        #quoteDisplay p {
             font-style: italic;
             font-size: 1.2rem;
             margin: 0;
         }
-        #quoteDisplay em, #lastViewedQuote em {
+        #quoteDisplay em {
             display: block;
             text-align: right;
             color: #555;
             margin-top: 0.5rem;
         }
-        button {
+        button, select {
             background-color: #007BFF;
             color: white;
-            border: none;
+            border: 1px solid #007BFF;
             padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
             margin-right: 5px;
         }
-        button:hover {
+        button:hover, select:hover {
             background-color: #0056b3;
         }
         .secondary-btn {
@@ -58,13 +55,14 @@
             background-color: #218838;
         }
         input[type="text"] {
-            width: calc(50% - 22px);
             padding: 10px;
-            margin-right: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .controls-container {
+        .add-quote-container input {
+            width: calc(50% - 22px);
+        }
+        .controls-container, .filter-container {
             margin-top: 2rem;
             padding-top: 1rem;
             border-top: 1px solid #ddd;
@@ -74,19 +72,23 @@
 <body>
     <h1>Dynamic Quote Generator</h1>
 
+    <!-- Category Filter -->
+    <div class="filter-container">
+        <label for="categoryFilter">Filter by Category:</label>
+        <select id="categoryFilter">
+            <option value="all">All Categories</option>
+            <!-- Categories will be dynamically populated here -->
+        </select>
+    </div>
+
     <!-- Area to display the quotes -->
     <div id="quoteDisplay">
-        <p>Click the button below to see a random quote!</p>
+        <p>Select a category and click the button to see a quote!</p>
     </div>
     <button id="newQuoteBtn">Show New Quote</button>
 
-    <!-- Session Storage Demo -->
-    <div id="lastViewedQuote">
-        <p>The last quote you viewed in this session will appear here.</p>
-    </div>
-
     <!-- Form for adding new quotes -->
-    <div class="controls-container">
+    <div class="controls-container add-quote-container">
         <h2>Add Your Own Quote</h2>
         <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
         <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
@@ -96,7 +98,6 @@
     <!-- Import/Export Controls -->
     <div class="controls-container">
         <h2>Manage Your Quotes</h2>
-        <!-- FIX: Changed button text to "Export Quotes" -->
         <button id="exportBtn" class="secondary-btn">Export Quotes</button>
         <button id="importBtn" class="secondary-btn">Import from JSON</button>
         <input type="file" id="importFile" accept=".json" style="display: none;" />
